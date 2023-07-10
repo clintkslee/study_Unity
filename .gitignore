@@ -1,5 +1,8 @@
 ### Unity ###
 # This .gitignore file should be placed at the root of your Unity project directory
+
+ignored/
+
 #
 # Get latest from https://github.com/github/gitignore/blob/main/Unity.gitignore
 study_Unity Project 3d/[Ll]ibrary/
