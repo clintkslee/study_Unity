@@ -1,0 +1,125 @@
+< 유니티 함수 실행 프로토콜 예시 >
+
+유니티 이벤트 함수 : 사전에 정의된 조건에 따라 자동으로 호출
+조건 만족 
+-> 유니티 메시지 : Start() 실행해 
+-> 각 오브젝트들은 자신의 컴포넌트 들에 Start() 있는 지 확인
+
+오브젝트A
+	컴포넌트1 Start() 있음
+	컴포넌트2 
+	컴포넌트3 Start() 있음
+
+오브젝트B
+	컴포넌트1
+	컴포넌트2 
+	컴포넌트3 
+
+오브젝트C
+	컴포넌트1 Start() 있음
+	컴포넌트2 
+	컴포넌트3 
+
+A1, A3, C1의 Start()가 실행된다.
+
+
+***
+
+< 유니티 이벤트 함수들 >
+
+1. 초기화를 위한 이벤트 함수 : Awake(), Start(), OnEnable()
+
+Awake() 함수 
+현재 씬에서 게임오브젝트가 활성화 되어 있을 때 1회 호출
+(컴포넌트 비활성화 상태여도 게임오브젝트가 활성화 되어 있으면 호출)
+* 활성화 : 인스펙터뷰에서 게임오브젝트 왼쪽 체크박스
+데이터 초기화 용도로 사용
+
+    private void Awake()
+    {
+        Debug.Log("콘솔에 출력하기 Debug.log() 사용\n");   
+    }
+
+
+Start() 함수 
+현재 씬에서 게임오브젝트와 컴포넌트가 모두 활성화 되어 있을 때 1회 호출
+데이터를 초기화하는 용도로 사용
+첫 번째 업데이트 함수가 실행되기 직전에 호출
+초기화 함수 호출 순서 : Awake() -> OnEnable() -> Start()
+
+    private void Start()
+    {
+        Debug.Log("Start 함수가 실행되었습니다.");
+    }
+
+OnEnable() 함수
+컴포넌트가 비활성화 되었다가 활성화 될 때 마다 1회 호출
+
+***
+
+2. 업데이트를 위한 이벤트 함수 : Update(), LateUpdate(), FixedUpdate()
+
+Update() 함수
+현재 씬이 실행된 후 컴포넌트가 활성화되어 있을 때 매 프레임마다 호출
+(FPS 60 = 1초에 Update() 60번 호출)
+
+    private void Update()
+    {
+        Debug.Log("Update 함수가 실행되었습니다.");
+    }
+
+LateUpdate() 함수
+현재 씬에 존재하는 모든 게임오브젝트의 Update() 함수가 1회 실행된 후 실행
+업데이트 함수 호출 순서 : Update() -> LateUpdate()
+활용 예)
+플레이어 캐릭터, 카메라처럼 서로 다른 오브젝트 존재 시 플레이어 캐릭터를 따라다니는 카메라 구현
+-> 플레이어 캐릭터 Update() 이용해 이동 후 카메라는 LateUpdate()에서 플레이어의 위치를 바탕으로 이동
+
+    private void LateUpdate()
+    {
+        Debug.Log("LateUpdate 함수가 실행되었습니다.");
+    }
+
+* Update()와 LateUpdate()는 FPS의 영향을 받는다
+
+FixedUpdate() 함수
+프레임의 영향 받지 않고 일정한 간격으로 호출
+Edit-Project Setting-Time 옵션의 Fixed Timestep 변수로 조절 가능
+(기본값 0.02 = 0.02초마다 1회 호출 = 1초에 50회)
+
+***
+
+3. 오브젝트 파괴를 위한 함수 : OnDestroy()
+
+OnDestroy() 함수
+게임오브젝트가 파괴될 때 1회 호출
+씬 변경, 게임 종료 시에도 모든오브젝트 파괴되므로 호출된다.
+* 체크박스로 하는 활성화/비활성화랑 파괴는 다름. 
+* 파괴는 계층뷰에서 Delete, 또는 게임 실행 종료로 호출 확인 가능
+
+    private void OnDestroy()
+    {
+        Debug.Log("OnDestroy 함수가 실행되었습니다.");
+    }
+
+***
+
+4. 종료를 위한 이벤트 함수 : OnApplicationQuit(), OnDisable()
+
+OnApplicationQuit() 함수
+게임이 종료될 때 1회 호출 (유니티 에디터에서는 플레이 모드 중지 시 호출)
+
+    private void OnApplicationQuit()
+    {
+        Debug.Log("OnApplicationQuit 함수가 실행되었습니다.");
+    }
+
+OnDisable() 함수
+컴포넌트가 활성화 상태에서 비활성화 상태로 전환시마다 1회 호출 (<-> OnEnable())
+
+    private void OnDisable()
+    {
+        Debug.Log("OnDisable 함수가 실행되었습니다.");
+    }
+
+

@@ -1,0 +1,149 @@
+< 게임오브젝트 물리, 충돌 >
+
+
+물리 관련 컴포넌트 : RigidBody 
+오브젝트의 질량 mass, 위치 마찰력 linear drag, 회전 마찰력 angular drag, 중력계수 gravity scale, 무시할 외부 물리력(축) constraint 설정 가능
+* constraint 에 체크 시 해당 축으로부터 받은 외부 물리력에 의해 이동, 회전하지 않는다.
+
+RigidBody 적용하면 중력은 바로 적용
+충돌 범위를 지정해주는 Collider 컴포넌트 추가 필요
+
+콜라이더 종류
+Box : 사각형
+Circle : 원, 연산 속도 가장 빠름
+Edge : 점의 개수, 위치 지정하여 곡선 형태 충돌 범위 표현(주로 바닥으로 사용)
+Polygon : 텍스쳐와 비슷한 모양으로 콜라이더 생성 가능  (연산량 많아짐)
+Capsule : 캡슐 모양, 주로 사람 모양 캐릭터에 사용
+
+Composite : 다른 게임오브젝트의 Collider 들을 하나로 묶어주는 역할 (Box, Polygon 에만 사용 가능)
+-> 빈 게임오브젝트 생성 
+-> Composite Collider 2D 추가(RigidBody 2D 자동 추가) 
+-> 하나로 묶고 싶은 게임오브젝트들을 자식 오브젝트로 설정
+-> 자식 오브젝트들의 Collider 2D 컴포넌트의 Used By Composite 변수 활성화
+
+***
+두 오브젝트가 충돌하기 위해선
+1) 두 오브젝트 모두 Collider 컴포넌트 보유
+2) 둘 중 하나 이상의 오브젝트가 RigidBody 컴포넌트 보유
+
+***
+코드로 물리 충돌 설정 
+1. RigidBody 컴포넌트를 담을 변수 생성
+2. 스크립트 실행 시 RigidBody 컴포넌트 정보 미리 생성한 변수에 저장
+3. 변수 통해 컴포넌트를 스크립트에서 사용
+
+      private float moveSpeed = 5.0f;                 // 이동 속도
+    private Rigidbody2D rigid2D;
+    private void Awake()
+    {
+        rigid2D = gameObject.GetComponent<Rigidbody2D>();
+    }
+
+    private void Update()
+    {
+        float x = Input.GetAxisRaw("Horizontal");   // 좌우 이동 
+        float y = Input.GetAxisRaw("Vertical");     // 상하 이동
+
+        // Rigidbody2D 컴포넌트에 있는 속력 변수 설정
+        rigid2D.velocity = new Vector3(x, y, 0) * moveSpeed;
+    }
+
+Rigidbody2D는 게임오브젝트의 물리를 적용, 처리하는 클래스로, 내부에 이동 관련 함수가 작동하고 있다.
+(이동 방향, 속도를 나타내는 velocity의 초기 값이 (0, 0)이어서 움직이지 않는 것)
+
+기존에는 transform 컴포넌트를 직접 접근하여 이동하였다면,
+        transform.position += moveDirection * moveSpeed * Time.deltaTime;
+
+Rigidbody2D에 있는 velocity 변수를 설정하여 Rigidbody2D 컴포넌트를 통해 이동도 가능하다.
+        rigid2D.velocity = new Vector3(x, y, 0) * moveSpeed;
+
+transform 컴포넌트로 이동 처리 시 장애물과 충돌할 경우 계속 앞으로 나아가려는 모습 보임
+Rigidbody2D 컴포넌트로 이동 처리 시 장애물과 충돌할 경우 계속 나아가려 하지 않고 정지 (다양한 물리적 처리가 기반된 이동)
+
+유니티에서 제공하는 물리 처리가 추가된 이동
+Rigidbody2D
+Rigidbody
+CharacterController
+NavMeshAgent 
+와 같은 컴포넌트들이 있다 (또는 에셋 스토어에서 구매하거나 직접 작성도 가능)
+
+*** 충돌
+게임 내 충돌 시에는 여러 효과 발동(적을 밀친다, 아이템을 먹는다 등)
+즉, 충돌에 의해 함수가 호출되어 어떤 행위가 수행된다.
+
+OnCollisionEnter2D() : 두 오브젝트 충돌 순간 1회 호출
+OnCollisionStay2D() : 충돌 직후 맞닿아 있는 동안 매 프레임 호출
+OnCollisionExit2D() : 두 오브젝트가 떨어져서 충돌 종료 시 1회 호출
+매개변수 : Collider2D collision (현재 컴포넌트를 가지고 있는 오브젝트에 부딪힌 오브젝트 정보)
+
+* [SerializeField] 추가 시 유니티에디터의 인스펙터 뷰에서 해당 변수 값 조절할 수 있도록 변경된다.
+
+    [SerializeField]
+    private Color color;
+    private SpriteRenderer spriteRenderer;
+
+    private void Awake()
+    {
+        spriteRenderer = GetComponent<SpriteRenderer>();
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        spriteRenderer.color = color;
+    }
+
+    private void OnCollisionStay2D(Collision2D collision)
+    {
+        Debug.Log(gameObject.name + "OnCollisionStay2D() 메소드 실행");
+
+    }
+
+    private void OnCollisionExit2D(Collision2D collision)
+    {
+        spriteRenderer.color = Color.white;
+    }
+
+*** 트리거
+물리적인 충돌 없이(두 오브젝트가 뚫고 지나가는 경우) 이벤트 함수가 호출
+OnTriggerEnter2D() 두 오브젝트가 닿는 순간 1회 호출
+OnTriggerStay2D() 두 오브젝트가 닿아있는 동안 매 프레임 호출
+OnTriggerExit2D() 두 오브젝트가 닿았다가 떨어지는 순간 1회 호출
+매개변수 : Collider2D collision (현재 컴포넌트를 가지고 있는 오브젝트에 부딪힌 오브젝트 정보)
+
+    [SerializeField] //움직일 다른 게임오브젝트 등록하여 맞닿은 두 물체가 아닌 다른 물체의 색 변경
+    private GameObject moveObject;
+
+    [SerializeField]
+    private Vector3 moveDirection;
+    private float moveSpeed;
+
+    private void Awake()
+    {
+        moveSpeed = 5.0f;
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        // moveObject 의 색상을 검은색으로 설정
+        moveObject.GetComponent<SpriteRenderer>().color = Color.black;
+    }
+
+    private void OnTriggerStay2D(Collider2D collision)
+    {
+        moveObject.transform.position += moveDirection * moveSpeed * Time.deltaTime;
+    }
+
+    private void OnTriggerExit2D(Collider2D collision)
+    {
+        //moveObject의 색상을 흰색으로 설정
+        moveObject.GetComponent<SpriteRenderer>().color = Color.white;
+        //moveObject의 위치를 (0,4,0)으로 설정
+        moveObject.transform.position = new Vector3(0, 4, 0);
+    }
+
+[SerializeField] 로 에디터상에서 변수 수정 가능하게 한 후, 다른 게임오브젝트 등록하여 조작 (이 경우 Sun 게임오브젝트)
+(한 게임 오브젝트에서 다른 게임 오브젝트 조작할 수 있다.)
+트리거 사용을 위해서는 해당 오브젝트에 콜라이터 추가, Is Trigger 체크박스에 체크해야 한다.
+
+
+
