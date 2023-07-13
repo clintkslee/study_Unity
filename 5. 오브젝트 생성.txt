@@ -1,0 +1,147 @@
+<오브젝트 생성>
+게임 내에서 코드를 이용해 오브젝트를 생성
+
+원본이 되는 게임오브젝트 필요 (프리팹 파일) 
+원본은 게임에 등장x (if 원본이 게임 내 등장, 원본 사망 시 복사할 대상 사라져 에러 발생)
+
+프리팹 : 게임(계층뷰)에 존재하는 게임 오브젝트를 프로젝트뷰에 파일로 저장해 둔 것
+프리팹 생성 방법
+1) 원하는 형태로 게임오브젝트 꾸미기(적 캐릭터, 아이템 등)
+2) 계층뷰의 게임오브젝트를 프로젝트뷰로 드래그앤드롭 (파란색 아이콘으로 생성된다)
+3) 계층뷰에 있는 게임오브젝트 삭제
+
+Instantiate(GameObject original) 함수
+original 게임오브젝트(프리팹파일)을 복제하여 생성
+(복제되는 오브젝트의 모든 컴포넌트 정보가 원본과 완전히 동일)
+
+위치, 회전값도 줄 수 있음
+Instantiate(GameObject original, Vector3 position, Quaternion rotation);
+복제할 원본, 생성된 복제본의 위치, 회전
+
+    [SerializeField]
+    private GameObject boxPrefab;
+
+    private void Awake()
+    {
+        Instantiate(boxPrefab, new Vector3(3, 3, 0), Quaternion.identity);
+        Instantiate(boxPrefab, new Vector3(-1, -2, 0), Quaternion.identity);
+    }
+
+
+
+
+회전 표현 : 오일러 방식, 쿼터니언 방식
+오일러 : 0~360 표현, 연산 느림, 짐벌락 현상
+쿼터니언 : 빠른 연산, 짐벌락 현상x, 특정 각도 표현 어려움
+
+유니티에서)
+transform.rotation : 게임오브젝트의 쿼터니언 회전 정보
+transform.localScale : 게임오브젝트의 오일러 회전 정보
+(인스펙터뷰에 표기된 transform의 rotation은 개발자 편의 상 오일러로 표현)
+
+오일러 회전 정보 입력하여 쿼터니언 회전 값으로 변경 가능
+Quaternion q = Quaternion.Euler(0, 0, 0); 
+
+transform.Rotate(new Vector3(1, 0, 0));
+'x축으로 빙글빙글 돌아라'와 같이 지속적인 회전 함수
+
+
+
+방금 생성된 복제 정보 받아서 설정하기
+        GameObject clone = Instantiate(boxPrefab, new Vector3(2, 1, 0), rotation);
+	
+clone의 정보가 바뀌면 계층뷰에 생성된 오브젝트의 정보가 바뀐다.
+
+    [SerializeField]
+    private GameObject boxPrefab;
+
+    private void Awake()
+    {
+
+        Quaternion rotation = Quaternion.Euler(0, 0, 45);
+        // 방금 생성된 복제 정보 받아서 설정하기
+        GameObject clone = Instantiate(boxPrefab, Vector3.zero, rotation);
+
+        // 방금 생성된 게임 오브젝트의 이름 변경
+        clone.name = "Box001";
+        // 색상 변경
+        clone.GetComponent<SpriteRenderer>().color = Color.black;
+        // 위치 변경
+        clone.transform.position = new Vector3(2, 1, 0);
+        // 크기 변경
+        clone.transform.localScale = new Vector3(3, 2, 1);
+    }
+
+
+*** 스포너 예시
+
+    [SerializeField]
+    private int objectSpawnCount = 30;
+    [SerializeField]
+    private GameObject[] prefabArray;
+    [SerializeField]
+    private Transform[] spawnPointArray;
+
+    private int currentObjectCount = 0;
+    private float objectSpawnTime = 0.0f;
+
+    private void Update()
+    {
+        if (currentObjectCount + 1 > objectSpawnCount)
+            return;
+
+        objectSpawnTime += Time.deltaTime;
+
+        //0.5초에 한번씩 실행
+        if(objectSpawnTime >= 0.5f)
+        { 
+            int prefabIndex = Random.Range(0, prefabArray.Length);
+            int spawnIndex = Random.Range(0, spawnPointArray.Length);
+
+            Vector3 position = spawnPointArray[spawnIndex].position;
+            GameObject clone = Instantiate(prefabArray[prefabIndex], position, Quaternion.identity);
+
+            Vector3 moveDirection = (spawnIndex == 0 ? Vector3.right : Vector3.left);
+            clone.GetComponent<Movement2D2>().Setup(moveDirection);
+
+            currentObjectCount++;
+            objectSpawnTime = 0.0f;
+        }
+    }
+
+*** 플레이어(발사) 예시
+
+   [SerializeField]
+    private KeyCode keyCodeFire = KeyCode.Space;
+    [SerializeField]
+    private GameObject bulletPrefab;
+    private float moveSpeed = 3.0f;
+
+    private Vector3 lastMoveDirection = Vector3.right;
+
+    private void Update()
+    {
+        float x = Input.GetAxisRaw("Horizontal");
+        float y = Input.GetAxisRaw("Vertical");
+
+        transform.position += new Vector3(x, y, 0) * moveSpeed * Time.deltaTime;
+
+        // 마지막에 입력된 방향을 총알의 발사 방향으로 사용
+        if(x!=0 || y!=0)
+            lastMoveDirection = new Vector3(x, y, 0);       
+
+        if (Input.GetKeyDown(keyCodeFire))
+        {
+            GameObject clone = Instantiate(bulletPrefab, transform.position, Quaternion.identity);
+
+            clone.name = "Bullet";
+            clone.transform.localScale = Vector3.one * 0.5f;
+            clone.GetComponent<SpriteRenderer>().color = Color.red;
+            clone.GetComponent<Movement2D2>().Setup(lastMoveDirection); //총알의 이동
+           
+        }    
+    }
+
+
+
+
